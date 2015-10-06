@@ -1,6 +1,6 @@
 #' @docType package
 #' @name methplot
-#' @title Exporatory plots of methylation data.
+#' @title Exploratory plots of genomic methylation data.
 #' @import dplyr
 #' @import data.table
 
