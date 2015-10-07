@@ -15,7 +15,6 @@ Imports:
   readr      (>= 0.1.1),
   stringr    (>= 1.0.0),
   R.utils    (>= 2.1.0),
-  devtools   (>= 1.9.1.9000),
   reshape2   (>= 1.4.1), 
   plyr       (>= 1.8.3), 
   xkcdcolors (>= 1.0)

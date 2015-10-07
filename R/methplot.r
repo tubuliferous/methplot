@@ -67,6 +67,7 @@ get_ucsc_refgene_table <-function(refgene_path){
 #' @family utility functions
 #' @param meth_path A character.
 #' @return data.table
+#' @export
 get_meth_table <- function(meth_path){
   this_meth_table <- fread(meth_path, sep="\t") %>%
                        rename(chr=V1, start=V2, end=V3, perc_meth=V4, meth=V5, unmeth=V6)
