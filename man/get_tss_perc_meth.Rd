@@ -4,12 +4,16 @@
 \alias{get_tss_perc_meth}
 \title{Get percent methylation table around gene model TSSs.}
 \usage{
-get_tss_perc_meth(refgene_path, meth_table)
+get_tss_perc_meth(refgene_path, meth_table, range, bin_width)
 }
 \arguments{
 \item{refgene_path}{A character.}
 
 \item{meth_table}{A data.frame.}
+
+\item{range}{A numeric.}
+
+\item{bin_width}{A numeric.}
 }
 \value{
 data.table

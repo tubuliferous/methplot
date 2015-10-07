@@ -75,7 +75,7 @@ get_meth_table <- function(meth_path){
 #' Get longest possible gene model from refgene.
 #'
 #' @family utility functions
-#' @param ref_table A data.frame or data.table. 
+#' @param ref_table A data.frame or data.table.
 #' @return data.table or data.frame
 longest_refgene_transcripts <- function(ref_table){
   ref_table %>%
@@ -117,7 +117,7 @@ get_bin_ranges_bed <- function(bed_table_path, bin_width, range){
               group = path_basename) %>%
     return
 }
-#' Get bin ranges for gene TSSs 
+#' Get bin ranges for gene TSSs
 #'
 #' @family workorse functions
 #' @param refgene_path A character.
@@ -164,7 +164,7 @@ get_bin_ranges_refgene <- function(refgene_path, range, bin_width){
 #'
 #' @family workorse functions
 #' @param ranges A data.frame.
-#' @param meth_table A data.frame. 
+#' @param meth_table A data.frame.
 #' @return data.table
 #' @export
 get_binned_perc_meth <- function(ranges, meth_table){
@@ -184,10 +184,12 @@ get_binned_perc_meth <- function(ranges, meth_table){
 #'
 #' @family high level functions
 #' @param refgene_path A character.
-#' @param meth_table A data.frame. 
+#' @param meth_table A data.frame.
+#' @param range A numeric.
+#' @param bin_width A numeric.
 #' @return data.table
 #' @export
-get_tss_perc_meth <- function(refgene_path, meth_table){
+get_tss_perc_meth <- function(refgene_path, meth_table, range, bin_width){
   if(range < bin_width) stop("Stopped: Range is less than bin_width!")
   bin_ranges_refgene <- get_bin_ranges_refgene(refgene_path, range = range, bin_width = bin_width)
   get_binned_perc_meth(bin_ranges_refgene, meth_table) %>% return
@@ -197,8 +199,8 @@ get_tss_perc_meth <- function(refgene_path, meth_table){
 #' Plot binned percent meth table.
 #'
 #' @family plotting functions
-#' @param binned_perc_meth_table A data.frame or data table. 
-#' @param manual_colors A logical. 
+#' @param binned_perc_meth_table A data.frame or data table.
+#' @param manual_colors A logical.
 #' @return data.table
 #' @export
 plot_percent_meth <- function(binned_perc_meth_table, manual_colors=FALSE){
@@ -241,8 +243,8 @@ plot_percent_meth <- function(binned_perc_meth_table, manual_colors=FALSE){
 #' Get gene quantiles for single gene.
 #'
 #' @family plotting functions
-#' @param trancript_line A data.frame or data table . 
-#' @param quantiles A numeric.  
+#' @param trancript_line A data.frame or data table .
+#' @param quantiles A numeric.
 #' @return data.table
 get_gene_quantiles  <- function(trancript_line, quantiles = 100){
   tss <- transcript_line$tss
