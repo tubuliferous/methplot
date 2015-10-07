@@ -2,7 +2,11 @@
 #' @name methplot
 #' @title Exploratory plots of genomic methylation data.
 #' @import dplyr
+NULL
 #' @import data.table
+NULL
+#' @import ggplot2
+NULL
 
 .onAttach <- function(libname, pkgname){
   packageStartupMessage("Welcome to methplot!")
@@ -205,7 +209,7 @@ get_tss_perc_meth <- function(refgene_path, meth_table, range, bin_width){
 #' @export
 plot_percent_meth <- function(binned_perc_meth_table, manual_colors=FALSE){
   binned_perc_meth_table$bin_mid <- with(binned_perc_meth_table, (bin_start + bin_end)/2)
-  this_plot <- ggplot2::ggplot(binned_perc_meth_table, aes(bin_mid, perc_meth)) +
+  this_plot <- ggplot(binned_perc_meth_table, aes(bin_mid, perc_meth)) +
     geom_line(aes(color=group)) +
     ylab("Percent Methylation") +
     xlab("Distance from Center (bp)") +
@@ -221,7 +225,7 @@ plot_percent_meth <- function(binned_perc_meth_table, manual_colors=FALSE){
           axis.title.x = element_text(color="black", size=14, vjust=-1.5),
           axis.text.y = element_text(color="black", size=12),
           axis.title.y = element_text(color="black", size=14, vjust=3),
-          plot.margin = unit(c(1,1,1,1), "cm"),
+          plot.margin = grid::unit(c(1,1,1,1), "cm"),
           panel.border=element_blank(),
           axis.ticks=element_line(size=0.6, color="black"))
 
