@@ -231,17 +231,18 @@ plot_percent_meth <- function(binned_perc_meth_table, manual_colors=FALSE){
 
   # Set up color palette to recycle when out of colors; relies on
   #   xkcdcolors package
-  if(manual_colors == TRUE){
-    color_palette <- c(name2color("blue"),
-                       name2color("light red"))
-    color_df <- data.frame(names = levels(df$group), color_palette = color_palette)
+  if (manual_colors == TRUE) {
+    color_palette <- c(name2color("black"), name2color("light red"), name2color("grey"))
+    print(levels(as.factor(binned_perc_meth_table$group)))
+    color_df <- data.frame(names = levels(as.factor(binned_perc_meth_table$group)), color_palette = color_palette)
     recycle_color_palette <- as.character(color_df$color_palette)
     names(recycle_color_palette) <- color_df$names
-    this_plot <- this_plot + scale_color_manual(values=recycle_color_palette)
+    this_plot <- this_plot + scale_color_manual(values = recycle_color_palette)
     print(recycle_color_palette)
   }
   this_plot %>% return
 }
+
 
 # Unfinished functions -------------------------
 #' Get gene quantiles for single gene.
