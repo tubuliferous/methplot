@@ -199,13 +199,13 @@ get_tss_perc_meth <- function(refgene_path, meth_table, range, bin_width){
   get_binned_perc_meth(bin_ranges_refgene, meth_table) %>% return
 }
 
-# Plotting functions
+# Plotting functions ------------------------------
 #' Plot binned percent meth table.
 #'
 #' @family plotting functions
 #' @param binned_perc_meth_table A data.frame or data table.
 #' @param manual_colors A logical.
-#' @return data.table
+#' @return ggplot
 #' @export
 plot_percent_meth <- function(binned_perc_meth_table, manual_colors=FALSE){
   binned_perc_meth_table$bin_mid <- with(binned_perc_meth_table, (bin_start + bin_end)/2)
@@ -243,6 +243,25 @@ plot_percent_meth <- function(binned_perc_meth_table, manual_colors=FALSE){
   this_plot %>% return
 }
 
+#' Plot binned percent meth table with a depth (as number of CpGs assayed) facet.
+#'
+#' @family plotting functions
+#' @param binned_perc_meth_table A data.frame or data table.
+#' @return ggplot
+#' @export
+plot_percent_meth_with_depth <- function(binned_perc_meth_table) {
+  binned_perc_meth_table$bin_mid <- with(binned_perc_meth_table,
+                                         (bin_start + bin_end)/2)
+
+  merged_df <- melt(binned_perc_meth_table, id.vars = c("bin_start", "bin_end", "meth", "unmeth", "group", "bin_mid"))
+
+  this_plot <- ggplot(merged_df) +
+    geom_line(aes(x = bin_mid, y = value, color = group)) +
+    geom_line(aes(x = bin_mid, y = value, color = group)) +
+    facet_grid(variable~., scales = "free_y")
+
+  this_plot %>% return
+}
 
 # Unfinished functions -------------------------
 #' Get gene quantiles for single gene.
