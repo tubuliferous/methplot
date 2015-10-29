@@ -174,12 +174,11 @@ get_bin_ranges_refgene <- function(refgene_path, range, bin_width){
 get_binned_perc_meth <- function(ranges, meth_table){
   ranges <- data.table(ranges)
   setkey(ranges, chr, start, end)
-
-  capture_overlaps <- foverlaps(meth_table, ranges, type="any", nomatch=0L)
+  capture_overlaps <- foverlaps(meth_table, ranges, type="any", nomatch=0L)  
   output <- capture_overlaps %>%
     group_by(bin_start, bin_end) %>%
-    summarise(meth = sum(meth), unmeth = sum(unmeth)) %>%
-    mutate(perc_meth = meth/(meth + unmeth), depth = meth + unmeth, group = ranges$group[1]) %>%
+    summarise(meth = sum(meth), unmeth = sum(unmeth), cpg_count = nrow(.)) %>%
+    mutate(perc_meth = meth/(meth + unmeth), total_read_count = meth + unmeth, group = ranges$group[1], depth = total_read_count / cpg_count) %>%
     arrange(bin_start) %>%
     return
 }
@@ -294,3 +293,7 @@ get_gene_quantiles  <- function(trancript_line, quantiles = 100){
   quantile_df <- data.frame(chr, start, end, bin_start, bin_end, group)
   quantile_df %>% return
 }
+
+
+
+
