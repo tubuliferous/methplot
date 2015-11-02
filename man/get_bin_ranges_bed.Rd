@@ -21,6 +21,8 @@ Get ranges of bins from BED element centers.
 }
 \seealso{
 Other workorse functions: \code{\link{get_bin_ranges_refgene}};
-  \code{\link{get_binned_perc_meth}}
+  \code{\link{get_binned_perc_meth}};
+  \code{\link{get_genome_range_overlaps}};
+  \code{\link{get_intersect_single_bases}}
 }
 

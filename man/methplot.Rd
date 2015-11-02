@@ -2,13 +2,9 @@
 % Please edit documentation in R/methplot.r
 \docType{package}
 \name{methplot}
-\alias{.onAttach}
 \alias{methplot}
 \alias{methplot-package}
 \title{Exploratory plots of genomic methylation data.}
-\usage{
-.onAttach(libname, pkgname)
-}
 \description{
 Exploratory plots of genomic methylation data.
 }

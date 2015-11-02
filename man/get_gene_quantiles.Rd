@@ -18,6 +18,8 @@ data.table
 Get gene quantiles for single gene.
 }
 \seealso{
-Other plotting functions: \code{\link{plot_percent_meth}}
+Other plotting functions: \code{\link{plot_generic_aggregate_enrichment}};
+  \code{\link{plot_percent_meth_with_depth}};
+  \code{\link{plot_percent_meth}}
 }
 
