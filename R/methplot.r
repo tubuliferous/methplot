@@ -189,12 +189,14 @@ get_genome_range_overlaps <- function(bin_ranges, bed_path){
 #' @param meth_table A data.table.
 #' @return data.table
 #' @export
-get_binned_perc_meth <- function(bin_ranges, meth_table){
-  capture_overlaps <- get_genome_range_overlaps(bin_ranges, bed_path)
+get_binned_perc_meth <- function(ranges, meth_table){
+  ranges <- data.table(ranges)
+  setkey(ranges, chr, start, end)
+  capture_overlaps <- foverlaps(meth_table, ranges, type="any", nomatch=0L)  
   output <- capture_overlaps %>%
     group_by(bin_start, bin_end) %>%
     summarise(meth = sum(meth), unmeth = sum(unmeth), cpg_count = nrow(.)) %>%
-    mutate(perc_meth = meth/(meth + unmeth), total_read_count = meth + unmeth, group = bin_ranges$group[1], depth = total_read_count / cpg_count) %>%
+    mutate(perc_meth = meth/(meth + unmeth), total_read_count = meth + unmeth, group = ranges$group[1], depth = total_read_count / cpg_count) %>%
     arrange(bin_start) %>%
     return
 }
@@ -206,8 +208,7 @@ get_binned_perc_meth <- function(bin_ranges, meth_table){
 #' @param ... A list of meth tables (data.tables).
 #' @return A list of data.tables. 
 #' @export
-get_intersecting_single_bases <- function(...)
-{
+get_intersect_single_bases <- function(...){
   meth_tables_list <- as.list(...)
   intersecting_cpgs <- merged <- Reduce(function(x, y) merge(x, y, by = c("chr", "start", "end")), meth_tables_list) %>% select(chr, start, end)
   return(intersecting_cpgs)
@@ -301,7 +302,7 @@ plot_percent_meth <- function(binned_perc_meth_table, manual_colors=FALSE){
 #' @param binned_perc_meth_table A data.frame or data table.
 #' @return ggplot
 #' @export
-plot_percent_meth_with_depth <- function(binned_perc_meth_table) {
+plot_percent_meth_with_depth <- function(binned_perc_meth_table){
   binned_perc_meth_table$bin_mid <- with(binned_perc_meth_table,
                                          (bin_start + bin_end)/2)
 
