@@ -199,6 +199,20 @@ get_binned_perc_meth <- function(bin_ranges, meth_table){
     return
 }
 
+# Merge an arbitrary number of data.frames/data.tables
+#' Take BED-formatted single base coords from arbitrary number of tables and return base intersection coords
+#' 
+#' @family workorse functions
+#' @param ... A list of meth tables (data.tables).
+#' @return A list of data.tables. 
+#' @export
+get_intersecting_single_bases <- function(...)
+{
+  meth_tables_list <- as.list(...)
+  intersecting_cpgs <- merged <- Reduce(function(x, y) merge(x, y, by = c("chr", "start", "end")), meth_tables_list) %>% select(chr, start, end)
+  return(intersecting_cpgs)
+}
+
 # Higher level functions --------------------------
 #' Get percent methylation table around gene model TSSs.
 #'
