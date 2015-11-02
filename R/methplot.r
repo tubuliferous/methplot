@@ -216,7 +216,7 @@ get_tss_perc_meth <- function(refgene_path, meth_table, range, bin_width){
 }
 
 # Plotting functions ------------------------------
-#' Plot binned aggregate enrichments arround element-defined centers. 
+#' Plot binned aggregate enrichments arround genomic-range-defined (BED-defined) centers. 
 #'
 #' @family plotting functions
 #' @param ranges A data.frame or data table.
@@ -229,10 +229,12 @@ plot_generic_aggregate_enrichment <- function(ranges, bed_path){
   overlaps$overlap_end <- pmin(overlaps$end, overlaps$i.end)
   overlaps$overlap_length <- overlaps$overlap_end - overlaps$overlap_start
   overlaps_collapsed <- overlaps %>%
-    group_by(bin_start) %>% 
-    dplyr::summarise(sum_overlap_length = sum(overlap_length)) %>%
+    group_by(bin_start, bin_end) %>% 
+    dplyr::summarise(bin_mid = ceiling(mean(bin_end + bin_start)/2), sum_overlap_length = sum(overlap_length)) %>%
     arrange(bin_start)
-  this_plot <- ggplot(overlaps_collapsed, aes(bin_start, sum_overlap_length)) + geom_area()
+
+  print(head(overlaps_collapsed))
+  this_plot <- ggplot(overlaps_collapsed, aes(bin_mid, sum_overlap_length)) + geom_area()
   return(this_plot)
 }
 
