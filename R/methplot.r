@@ -164,21 +164,36 @@ get_bin_ranges_refgene <- function(refgene_path, range, bin_width){
   expanded_refgene$group <- refgene_table$group[1]
   return(expanded_refgene %>% select(gene_name, chr, strand, start, end, bin_start, bin_end, group))
 }
+
+
+#' Get range overlaps
+#'
+#' @family workorse functions
+#' @param bin_ranges A data.frame.
+#' @param bed_path A data.table.
+#' @return data.table
+get_genome_range_overlaps <- function(bin_ranges, bed_path){
+  bin_ranges <- data.table(bin_ranges)
+  setkey(bin_ranges, chr, start, end)
+  bed <- fread(bed_path)
+  bed <- bed %>% rename(chr = V1, start = V2, end = V3)
+  capture_overlaps <- foverlaps(bed, bin_ranges, nomatch=0L)
+  return(capture_overlaps)
+}
+
 #' Get percent methylation table by bin.
 #'
 #' @family workorse functions
-#' @param ranges A data.frame.
-#' @param meth_table A data.frame.
+#' @param bin_ranges A data.frame.
+#' @param meth_table A data.table.
 #' @return data.table
 #' @export
-get_binned_perc_meth <- function(ranges, meth_table){
-  ranges <- data.table(ranges)
-  setkey(ranges, chr, start, end)
-  capture_overlaps <- foverlaps(meth_table, ranges, type="any", nomatch=0L)  
+get_binned_perc_meth <- function(bin_ranges, meth_table){
+  capture_overlaps <- get_genome_range_overlaps(bin_ranges, bed_path)
   output <- capture_overlaps %>%
     group_by(bin_start, bin_end) %>%
     summarise(meth = sum(meth), unmeth = sum(unmeth), cpg_count = nrow(.)) %>%
-    mutate(perc_meth = meth/(meth + unmeth), total_read_count = meth + unmeth, group = ranges$group[1], depth = total_read_count / cpg_count) %>%
+    mutate(perc_meth = meth/(meth + unmeth), total_read_count = meth + unmeth, group = bin_ranges$group[1], depth = total_read_count / cpg_count) %>%
     arrange(bin_start) %>%
     return
 }
