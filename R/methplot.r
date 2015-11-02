@@ -121,6 +121,7 @@ get_bin_ranges_bed <- function(bed_table_path, bin_width, range){
               group = path_basename) %>%
     return
 }
+
 #' Get bin ranges for gene TSSs
 #'
 #' @family workorse functions
@@ -165,18 +166,18 @@ get_bin_ranges_refgene <- function(refgene_path, range, bin_width){
   return(expanded_refgene %>% select(gene_name, chr, strand, start, end, bin_start, bin_end, group))
 }
 
-
 #' Get range overlaps
 #'
 #' @family workorse functions
 #' @param bin_ranges A data.frame.
-#' @param bed_path A data.table.
+#' @param bed_path A character.
 #' @return data.table
 get_genome_range_overlaps <- function(bin_ranges, bed_path){
   bin_ranges <- data.table(bin_ranges)
   setkey(bin_ranges, chr, start, end)
   bed <- fread(bed_path)
-  bed <- bed %>% rename(chr = V1, start = V2, end = V3)
+  # # bed <- bed %>% rename(chr = V1, start = V2, end = V3)
+  names(bed)[1:3] <- c("chr", "start", "end")
   capture_overlaps <- foverlaps(bed, bin_ranges, nomatch=0L)
   return(capture_overlaps)
 }
@@ -197,7 +198,8 @@ get_binned_perc_meth <- function(bin_ranges, meth_table){
     arrange(bin_start) %>%
     return
 }
-# Higher level functions
+
+# Higher level functions --------------------------
 #' Get percent methylation table around gene model TSSs.
 #'
 #' @family high level functions
@@ -214,6 +216,26 @@ get_tss_perc_meth <- function(refgene_path, meth_table, range, bin_width){
 }
 
 # Plotting functions ------------------------------
+#' Plot binned aggregate enrichments arround element-defined centers. 
+#'
+#' @family plotting functions
+#' @param ranges A data.frame or data table.
+#' @param bed_path A character. 
+#' @return ggplot
+#' @export
+plot_generic_aggregate_enrichment <- function(ranges, bed_path){
+  overlaps <- get_genome_range_overlaps(ranges, bed_path)
+  overlaps$overlap_start <- pmax(overlaps$start, overlaps$i.start)
+  overlaps$overlap_end <- pmin(overlaps$end, overlaps$i.end)
+  overlaps$overlap_length <- overlaps$overlap_end - overlaps$overlap_start
+  overlaps_collapsed <- overlaps %>%
+    group_by(bin_start) %>% 
+    dplyr::summarise(sum_overlap_length = sum(overlap_length)) %>%
+    arrange(bin_start)
+  this_plot <- ggplot(overlaps_collapsed, aes(bin_start, sum_overlap_length)) + geom_area()
+  return(this_plot)
+}
+
 #' Plot binned percent meth table.
 #'
 #' @family plotting functions
@@ -308,7 +330,3 @@ get_gene_quantiles  <- function(trancript_line, quantiles = 100){
   quantile_df <- data.frame(chr, start, end, bin_start, bin_end, group)
   quantile_df %>% return
 }
-
-
-
-
