@@ -121,7 +121,6 @@ get_bin_ranges_bed <- function(bed_table_path, bin_width, range){
               group = path_basename) %>%
     return
 }
-
 #' Get bin ranges for gene TSSs
 #'
 #' @family workorse functions
@@ -165,7 +164,6 @@ get_bin_ranges_refgene <- function(refgene_path, range, bin_width){
   expanded_refgene$group <- refgene_table$group[1]
   return(expanded_refgene %>% select(gene_name, chr, strand, start, end, bin_start, bin_end, group))
 }
-
 #' Get range overlaps
 #'
 #' @family workorse functions
@@ -181,7 +179,6 @@ get_genome_range_overlaps <- function(bin_ranges, bed_path){
   capture_overlaps <- foverlaps(bed, bin_ranges, nomatch=0L)
   return(capture_overlaps)
 }
-
 #' Get percent methylation table by bin.
 #'
 #' @family workorse functions
@@ -200,8 +197,6 @@ get_binned_perc_meth <- function(ranges, meth_table){
     arrange(bin_start) %>%
     return
 }
-
-# Merge an arbitrary number of data.frames/data.tables
 #' Take BED-formatted single base coords from arbitrary number of tables and return base intersection coords
 #' 
 #' @family workorse functions
@@ -252,7 +247,6 @@ plot_generic_aggregate_enrichment <- function(ranges, bed_path){
   this_plot <- ggplot(overlaps_collapsed, aes(bin_mid, sum_overlap_length)) + geom_area()
   return(this_plot)
 }
-
 #' Plot binned percent meth table.
 #'
 #' @family plotting functions
@@ -295,7 +289,6 @@ plot_percent_meth <- function(binned_perc_meth_table, manual_colors=FALSE){
   }
   this_plot %>% return
 }
-
 #' Plot binned percent meth table with a depth (as number of CpGs assayed) facet.
 #'
 #' @family plotting functions
