@@ -4,12 +4,10 @@
 \alias{plot_percent_meth}
 \title{Plot binned percent meth table.}
 \usage{
-plot_percent_meth(binned_perc_meth_table, manual_colors = FALSE)
+plot_percent_meth(binned_perc_meth_table)
 }
 \arguments{
 \item{binned_perc_meth_table}{A data.frame or data table.}
-
-\item{manual_colors}{A logical.}
 }
 \value{
 ggplot

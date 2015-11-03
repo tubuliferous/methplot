@@ -189,7 +189,7 @@ get_genome_range_overlaps <- function(bin_ranges, bed_path){
 get_binned_perc_meth <- function(ranges, meth_table){
   ranges <- data.table(ranges)
   setkey(ranges, chr, start, end)
-  capture_overlaps <- foverlaps(meth_table, ranges, type="any", nomatch=0L)  
+  capture_overlaps <- foverlaps(meth_table, ranges, type="any", nomatch=0L)
   output <- capture_overlaps %>%
     group_by(bin_start, bin_end) %>%
     summarise(meth = sum(meth), unmeth = sum(unmeth), cpg_count = nrow(.)) %>%
@@ -198,10 +198,10 @@ get_binned_perc_meth <- function(ranges, meth_table){
     return
 }
 #' Take BED-formatted single base coords from arbitrary number of tables and return base intersection coords
-#' 
+#'
 #' @family workorse functions
 #' @param ... A list of meth tables (data.tables).
-#' @return A list of data.tables. 
+#' @return A list of data.tables.
 #' @export
 get_intersect_single_bases <- function(...){
   meth_tables_list <- as.list(...)
@@ -226,11 +226,11 @@ get_tss_perc_meth <- function(refgene_path, meth_table, range, bin_width){
 }
 
 # Plotting functions ------------------------------
-#' Plot binned aggregate enrichments arround genomic-range-defined (BED-defined) centers. 
+#' Plot binned aggregate enrichments arround genomic-range-defined (BED-defined) centers.
 #'
 #' @family plotting functions
 #' @param ranges A data.frame or data table.
-#' @param bed_path A character. 
+#' @param bed_path A character.
 #' @return ggplot
 #' @export
 plot_generic_aggregate_enrichment <- function(ranges, bed_path){
@@ -239,7 +239,7 @@ plot_generic_aggregate_enrichment <- function(ranges, bed_path){
   overlaps$overlap_end <- pmin(overlaps$end, overlaps$i.end)
   overlaps$overlap_length <- overlaps$overlap_end - overlaps$overlap_start
   overlaps_collapsed <- overlaps %>%
-    group_by(bin_start, bin_end) %>% 
+    group_by(bin_start, bin_end) %>%
     dplyr::summarise(bin_mid = ceiling(mean(bin_end + bin_start)/2), sum_overlap_length = sum(overlap_length)) %>%
     arrange(bin_start)
 
@@ -251,10 +251,9 @@ plot_generic_aggregate_enrichment <- function(ranges, bed_path){
 #'
 #' @family plotting functions
 #' @param binned_perc_meth_table A data.frame or data table.
-#' @param manual_colors A logical.
 #' @return ggplot
 #' @export
-plot_percent_meth <- function(binned_perc_meth_table, manual_colors=FALSE){
+plot_percent_meth <- function(binned_perc_meth_table){
   binned_perc_meth_table$bin_mid <- with(binned_perc_meth_table, (bin_start + bin_end)/2)
   this_plot <- ggplot(binned_perc_meth_table, aes(bin_mid, perc_meth)) +
     geom_line(aes(color=group)) +
@@ -276,17 +275,6 @@ plot_percent_meth <- function(binned_perc_meth_table, manual_colors=FALSE){
           panel.border=element_blank(),
           axis.ticks=element_line(size=0.6, color="black"))
 
-  # Set up color palette to recycle when out of colors; relies on
-  #   xkcdcolors package
-  if (manual_colors == TRUE) {
-    color_palette <- c(name2color("black"), name2color("light red"), name2color("grey"))
-    print(levels(as.factor(binned_perc_meth_table$group)))
-    color_df <- data.frame(names = levels(as.factor(binned_perc_meth_table$group)), color_palette = color_palette)
-    recycle_color_palette <- as.character(color_df$color_palette)
-    names(recycle_color_palette) <- color_df$names
-    this_plot <- this_plot + scale_color_manual(values = recycle_color_palette)
-    print(recycle_color_palette)
-  }
   this_plot %>% return
 }
 #' Plot binned percent meth table with a depth (as number of CpGs assayed) facet.
