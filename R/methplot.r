@@ -45,9 +45,9 @@ get_grch_gene_table <- function(grch37_table_path){
   chrs[which(chrs=="24")] <- "Y"
   chrs <- paste("chr", chrs, sep="")
   grch37_table <- grch37_table %>%
-                  mutate(chr = chrs) %>%
-                  filter(type=="gene") %>%
-                  mutate(gene_name = str_match(.$info, "Name=(.+?);")[,2])
+                  dplyr::mutate(chr = chrs) %>%
+                  dplyr::filter(type=="gene") %>%
+                  dplyr::mutate(gene_name = str_match(.$info, "Name=(.+?);")[,2])
 
   out <- grch37_table[grep("pseudo=false", grch37_table$info, invert=TRUE), ]
   return(out)
@@ -58,12 +58,12 @@ get_grch_gene_table <- function(grch37_table_path){
 #' @param refgene_path A character.
 #' @return data.frame
 get_ucsc_refgene_table <-function(refgene_path){
-  fread(refgene_path, sep="\t") %>%
-  rename(chr = chrom,
+  data.table::fread(refgene_path, sep="\t") %>%
+  dplyr::rename(chr = chrom,
          start = txStart,
          end = txEnd,
          gene_name = name2) %>%
-         mutate(group = basename(refgene_path)) %>%
+         dplyr::mutate(group = basename(refgene_path)) %>%
          return
 }
 #' Import and format methyl sequencing file.
@@ -73,8 +73,8 @@ get_ucsc_refgene_table <-function(refgene_path){
 #' @return data.table
 #' @export
 get_meth_table <- function(meth_path){
-  this_meth_table <- fread(meth_path, sep="\t") %>%
-                       rename(chr=V1, start=V2, end=V3, perc_meth=V4, meth=V5, unmeth=V6)
+  this_meth_table <- data.table::fread(meth_path, sep="\t") %>%
+                       dplyr::rename(chr=V1, start=V2, end=V3, perc_meth=V4, meth=V5, unmeth=V6)
 }
 #' Get longest possible gene model from refgene.
 #'
@@ -84,8 +84,8 @@ get_meth_table <- function(meth_path){
 longest_refgene_transcripts <- function(ref_table){
   ref_table %>%
     # some genes are duplicated, so multiple groups must be used:
-    group_by(gene_name, chr, strand) %>%
-    summarise(tss = min(start),
+    dplyr::group_by(gene_name, chr, strand) %>%
+    dplyr::summarise(tss = min(start),
               tes = max(end)) %>%
     # autosomes %>%
     normal_chroms %>%
@@ -104,8 +104,8 @@ longest_refgene_transcripts <- function(ref_table){
 #' @export
 get_bin_ranges_bed <- function(bed_table_path, bin_width, range){
   path_basename <- basename(bed_table_path)
-  bed_table <- fread(bed_table_path, sep="\t")
-  bed_table <- bed_table %>% rename(chr = V1, start = V2, end = V3)
+  bed_table <- data.table::fread(bed_table_path, sep="\t")
+  bed_table <- bed_table %>% dplyr::rename(chr = V1, start = V2, end = V3)
   bed_table$midpoints <- with(bed_table, round((start + end)/2))
   bin_start <- seq(from = -range, to = (range - bin_width), by=bin_width)
   expanded_bed_table <- bed_table[rep(seq_len(nrow(bed_table)), each=length(bin_start)),]
@@ -113,7 +113,7 @@ get_bin_ranges_bed <- function(bed_table_path, bin_width, range){
   expanded_bed_table$bin_start <- bin_start_rep
   expanded_bed_table$bin_end  <- expanded_bed_table$bin_start + bin_width
   expanded_bed_table %>%
-    transmute(chr   = chr,
+    dplyr::transmute(chr   = chr,
               start = midpoints + bin_start,
               end   = midpoints   + bin_end,
               bin_start = bin_start,
@@ -140,7 +140,7 @@ get_bin_ranges_refgene <- function(refgene_path, range, bin_width){
   rep_indices <- nrow(collapsed_refgene) %>%
                       seq_len %>%
                       rep(., each=length(bin_start))
-  expanded_refgene <- collapsed_refgene %>% slice(rep_indices)
+  expanded_refgene <- collapsed_refgene %>% dplyr::slice(rep_indices)
 
   expanded_refgene$bin_start <- rep(bin_start, nrow(collapsed_refgene))
   expanded_refgene$bin_end <- expanded_refgene$bin_start + bin_width
@@ -173,10 +173,10 @@ get_bin_ranges_refgene <- function(refgene_path, range, bin_width){
 get_genome_range_overlaps <- function(bin_ranges, bed_path){
   bin_ranges <- data.table(bin_ranges)
   setkey(bin_ranges, chr, start, end)
-  bed <- fread(bed_path)
+  bed <- data.table::fread(bed_path)
   # # bed <- bed %>% rename(chr = V1, start = V2, end = V3)
   names(bed)[1:3] <- c("chr", "start", "end")
-  capture_overlaps <- foverlaps(bed, bin_ranges, nomatch=0L)
+  capture_overlaps <- data.table::foverlaps(bed, bin_ranges, nomatch=0L)
   return(capture_overlaps)
 }
 #' Get percent methylation table by bin.
@@ -188,13 +188,14 @@ get_genome_range_overlaps <- function(bin_ranges, bed_path){
 #' @export
 get_binned_perc_meth <- function(ranges, meth_table){
   ranges <- data.table(ranges)
-  setkey(ranges, chr, start, end)
-  capture_overlaps <- foverlaps(meth_table, ranges, type="any", nomatch=0L)
+  data.table::setkey(ranges, chr, start, end)
+  capture_overlaps <- data.table::foverlaps(meth_table, ranges, type="any", nomatch=0L)
   output <- capture_overlaps %>%
     group_by(bin_start, bin_end) %>%
-    summarise(meth = sum(meth), unmeth = sum(unmeth), cpg_count = nrow(.)) %>%
-    mutate(perc_meth = meth/(meth + unmeth), total_read_count = meth + unmeth, group = ranges$group[1], depth = total_read_count / cpg_count) %>%
-    arrange(bin_start) %>%
+    dplyr::group_by(bin_start, bin_end) %>%
+    dplyr::summarise(meth = sum(meth), unmeth = sum(unmeth), cpg_count = length(meth), group = group[1]) %>% 
+    dplyr::mutate(perc_meth = meth / (meth + unmeth), depth = total_read_count / cpg_count) %>%
+    dplyr::arrange(bin_start) %>%
     return
 }
 #' Take BED-formatted single base coords from arbitrary number of tables and return base intersection coords
@@ -205,7 +206,7 @@ get_binned_perc_meth <- function(ranges, meth_table){
 #' @export
 get_intersect_single_bases <- function(...){
   meth_tables_list <- as.list(...)
-  intersecting_cpgs <- merged <- Reduce(function(x, y) merge(x, y, by = c("chr", "start", "end")), meth_tables_list) %>% select(chr, start, end)
+  intersecting_cpgs <- Reduce(function(x, y) merge(x, y, by = c("chr", "start", "end")), meth_tables_list) %>% select(chr, start, end)
   return(intersecting_cpgs)
 }
 
@@ -239,12 +240,12 @@ plot_generic_aggregate_enrichment <- function(ranges, bed_path){
   overlaps$overlap_end <- pmin(overlaps$end, overlaps$i.end)
   overlaps$overlap_length <- overlaps$overlap_end - overlaps$overlap_start
   overlaps_collapsed <- overlaps %>%
-    group_by(bin_start, bin_end) %>%
+    dplyr::group_by(bin_start, bin_end) %>%
     dplyr::summarise(bin_mid = ceiling(mean(bin_end + bin_start)/2), sum_overlap_length = sum(overlap_length)) %>%
-    arrange(bin_start)
+    dplyr::arrange(bin_start)
 
   print(head(overlaps_collapsed))
-  this_plot <- ggplot(overlaps_collapsed, aes(bin_mid, sum_overlap_length)) + geom_area()
+  this_plot <- ggplot2::ggplot(overlaps_collapsed, aes(bin_mid, sum_overlap_length)) + ggplot2::geom_area()
   return(this_plot)
 }
 #' Plot binned percent meth table.
@@ -255,13 +256,13 @@ plot_generic_aggregate_enrichment <- function(ranges, bed_path){
 #' @export
 plot_percent_meth <- function(binned_perc_meth_table){
   binned_perc_meth_table$bin_mid <- with(binned_perc_meth_table, (bin_start + bin_end)/2)
-  this_plot <- ggplot(binned_perc_meth_table, aes(bin_mid, perc_meth)) +
-    geom_line(aes(color=group)) +
-    ylab("Percent Methylation") +
-    xlab("Distance from Center (bp)") +
-    scale_x_continuous(expand=c(0,0)) +
-    scale_y_continuous(expand=c(0,0.0001), limits = c(0,1)) +
-    theme(panel.grid.minor = element_blank(),
+  this_plot <- ggplot2::ggplot(binned_perc_meth_table, aes(bin_mid, perc_meth)) +
+    ggplot2::geom_line(aes(color=group)) +
+    ggplot2::ylab("Percent Methylation") +
+    ggplot2::xlab("Distance from Center (bp)") +
+    ggplot2::scale_x_continuous(expand=c(0,0)) +
+    ggplot2::scale_y_continuous(expand=c(0,0.0001), limits = c(0,1)) +
+    ggplot2::theme(panel.grid.minor = element_blank(),
           panel.grid.major = element_blank(),
           # legend.position="none",
           legend.key = element_blank(),
@@ -289,10 +290,10 @@ plot_percent_meth_with_depth <- function(binned_perc_meth_table){
 
   merged_df <- melt(binned_perc_meth_table, id.vars = c("bin_start", "bin_end", "meth", "unmeth", "group", "bin_mid"))
 
-  this_plot <- ggplot(merged_df) +
-    geom_line(aes(x = bin_mid, y = value, color = group)) +
-    geom_line(aes(x = bin_mid, y = value, color = group)) +
-    facet_grid(variable~., scales = "free_y")
+  this_plot <- ggplot2::ggplot(merged_df) +
+    ggplot2::geom_line(aes(x = bin_mid, y = value, color = group)) +
+    ggplot2::geom_line(aes(x = bin_mid, y = value, color = group)) +
+    ggplot2::facet_grid(variable~., scales = "free_y")
 
   this_plot %>% return
 }
