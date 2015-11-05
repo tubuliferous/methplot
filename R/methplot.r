@@ -172,14 +172,15 @@ get_bin_ranges_refgene <- function(refgene_path, range, bin_width){
 #' @family workorse functions
 #' @param bin_ranges A data.frame.
 #' @param bed_path A character.
+#' @param cores An integer. 
 #' @return data.table
-get_genome_range_overlaps <- function(bin_ranges, bed_path){
+get_genome_range_overlaps <- function(bin_ranges, bed_path, cores = 1){
   bin_ranges <- data.table(bin_ranges)
   setkey(bin_ranges, chr, start, end)
   bed <- data.table::fread(bed_path)
   # # bed <- bed %>% rename(chr = V1, start = V2, end = V3)
   names(bed)[1:3] <- c("chr", "start", "end")
-  capture_overlaps <- fast_genomic_overlap(bed, bin_ranges)
+  capture_overlaps <- fast_genomic_overlap(bed, bin_ranges, cores = cores)
   # capture_overlaps <- data.table::foverlaps(bed, bin_ranges, nomatch=0L)
   return(capture_overlaps)
 }
@@ -188,13 +189,14 @@ get_genome_range_overlaps <- function(bin_ranges, bed_path){
 #' @family workorse functions
 #' @param bin_ranges A data.frame.
 #' @param meth_table A data.table.
+#' @param cores An integer.
 #' @return data.table
 #' @export
-get_binned_perc_meth <- function(ranges, meth_table){
+get_binned_perc_meth <- function(ranges, meth_table, cores = 1){
   ranges <- data.table(ranges)
   data.table::setkey(ranges, chr, start, end)
   # capture_overlaps <- data.table::foverlaps(meth_table, ranges, type="any", nomatch=0L)
-  capture_overlaps <- fast_genomic_overlap(meth_table, ranges)
+  capture_overlaps <- fast_genomic_overlap(meth_table, ranges, cores = cores)
   output <- capture_overlaps %>%
     group_by(bin_start, bin_end) %>%
     dplyr::group_by(bin_start, bin_end) %>%
