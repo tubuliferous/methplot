@@ -174,13 +174,13 @@ get_bin_ranges_refgene <- function(refgene_path, range, bin_width){
 #' @param bed_path A character.
 #' @param cores An integer. 
 #' @return data.table
-get_genome_range_overlaps <- function(bin_ranges, bed_path, cores = 1){
+get_genome_range_overlaps <- function(bin_ranges, bed_path){
   bin_ranges <- data.table(bin_ranges)
   setkey(bin_ranges, chr, start, end)
   bed <- data.table::fread(bed_path)
   # # bed <- bed %>% rename(chr = V1, start = V2, end = V3)
   names(bed)[1:3] <- c("chr", "start", "end")
-  capture_overlaps <- fast_genomic_overlap(bed, bin_ranges, cores = cores)
+  capture_overlaps <- data.table::foverlaps(bed, bin_ranges, nomatch=0L)
   # capture_overlaps <- data.table::foverlaps(bed, bin_ranges, nomatch=0L)
   return(capture_overlaps)
 }
@@ -192,11 +192,10 @@ get_genome_range_overlaps <- function(bin_ranges, bed_path, cores = 1){
 #' @param cores An integer.
 #' @return data.table
 #' @export
-get_binned_perc_meth <- function(ranges, meth_table, cores = 1){
+get_binned_perc_meth <- function(ranges, meth_table){
   ranges <- data.table(ranges)
   data.table::setkey(ranges, chr, start, end)
-  # capture_overlaps <- data.table::foverlaps(meth_table, ranges, type="any", nomatch=0L)
-  capture_overlaps <- fast_genomic_overlap(meth_table, ranges, cores = cores)
+  capture_overlaps <- data.table::foverlaps(meth_table, ranges, type="any", nomatch=0L)
   output <- capture_overlaps %>%
     group_by(bin_start, bin_end) %>%
     dplyr::group_by(bin_start, bin_end) %>%
@@ -222,7 +221,7 @@ get_intersect_single_bases <- function(...){
 #' @param table_1 A data.table.
 #' @param table_2 A data.table.
 #' @return data.table
-fast_genomic_overlap <- function(table_1, table_2, cores = 1){
+parallel_genomic_intersect <- function(table_1, table_2, cores = 1){
   doMC::registerDoMC(cores = cores)
   table_1_chrs <- table_1$chr %>% 
     as.factor %>% 
@@ -240,6 +239,49 @@ fast_genomic_overlap <- function(table_1, table_2, cores = 1){
     return(data.table::foverlaps(table_2_sub, table_1_sub, type="any", nomatch=0L))
   }, .parallel = TRUE, .id = NULL)
   
+  doMC::registerDoMC(cores = 1)
+  return(data.table(capture))
+}
+#' Get the rows from table_1 with coords that don't intersect the coords in table_2
+#'
+#' @family workorse functions
+#' @param table_1 A data.table in BED format.
+#' @param table_2 A data.table in BED format.
+#' @return A data.table.
+genomic_complement <- function(table_1, table_2){
+  data.table::setkey(table_2, chr, start, end)
+  intersect_indices <- foverlaps(table_1, table_2, which = TRUE, type="any", nomatch = 0L)
+  all_indices <- 1:nrow(table_1)
+  return(table_1[!(all_indices %in% intersect_indices$xid), ])
+}
+#' Get the rows from table_1 with coords that don't intersect the coords in table_2 parallelized by chrom
+#'
+#' @family workorse functions
+#' @param table_1 A data.table in BED format.
+#' @param table_2 A data.table in BED format.
+#' @param cores An integer numeric.
+#' @return A data.table.
+parallel_genomic_complement <- function(table_1, table_2, cores = 1){
+  doMC::registerDoMC(cores = cores)
+  table_1_chrs <- table_1$chr %>% 
+    as.factor %>% 
+    levels
+  table_2_chrs <- table_2$chr %>% 
+    as.factor %>% 
+    levels
+
+  intersect_chrs <- table_1_chrs[table_1_chrs %in% table_2_chrs]
+
+  capture <- plyr::adply(intersect_chrs, 1, function(x){
+    table_1_sub <- table_1 %>% dplyr::filter(chr == x)
+    table_2_sub <- table_2 %>% dplyr::filter(chr == x)
+    # data.table::setkey(table_1_sub, chr, start, end)
+    data.table::setkey(table_2_sub, chr, start, end)
+    intersect_indices <- data.table::foverlaps(table_1_sub, table_2_sub, which = TRUE, type="any", nomatch=0L)
+    all_indices <- 1:nrow(table_1_sub)
+    return(table_1_sub[!(all_indices %in% intersect_indices$xid), ])
+  }, .parallel = TRUE, .id = NULL) 
+
   doMC::registerDoMC(cores = 1)
   return(data.table(capture))
 }
@@ -267,19 +309,15 @@ get_tss_perc_meth <- function(refgene_path, meth_table, range, bin_width){
 #' @param meth_table A data.table.
 #' @return data.table
 #' @export
-repeat_mask_meth_table <- function(repeat_mask_ucsc_path, meth_table, cores = 1){
+repeat_mask_meth_table <- function(repeat_mask_ucsc_path, meth_table){
   repeat_mask <- fread(repeat_mask_ucsc_path)
   repeat_mask <- repeat_mask %>% dplyr::select(genoName, genoStart, genoEnd)
   names(repeat_mask) <- c("chr", "start", "end")
-  overlaps <- fast_genomic_overlap(meth_table, repeat_mask, cores = cores)
-
-  anti_joined <- dplyr::anti_join(meth_table, overlaps, by = c("chr", "start", "end"))
-  anti_joined %>% dim
-
-  return(dplyr::anti_join(meth_table, overlaps, by = c("chr", "start", "end")))
+  return(genomic_complement(meth_table, repeat_mask))
 }
 
 # Plotting functions ------------------------------
+
 #' Plot binned aggregate enrichments arround genomic-range-defined (BED-defined) centers.
 #'
 #' @family plotting functions
@@ -352,6 +390,7 @@ plot_percent_meth_with_depth <- function(binned_perc_meth_table){
 }
 
 # Unfinished functions -------------------------
+
 #' Get gene quantiles for single gene.
 #'
 #' @family plotting functions
