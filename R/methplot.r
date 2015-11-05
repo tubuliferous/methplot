@@ -7,12 +7,14 @@ NULL
 NULL
 #' @import ggplot2
 NULL
+#' @import doMC
+NULL
 
 .onAttach <- function(libname, pkgname){
   packageStartupMessage("Welcome to methplot!")
 }
 
-# Small helper functions
+# Small helper functions -----------------------
 #' Return subset of autosomes.
 #'
 #' @family utility functions
@@ -93,7 +95,8 @@ longest_refgene_transcripts <- function(ref_table){
     return
 }
 
-# Workhorse functions
+# Workhorse functions -----------------------------
+
 #' Get ranges of bins from BED element centers.
 #'
 #' @family workorse functions
@@ -194,7 +197,7 @@ get_binned_perc_meth <- function(ranges, meth_table){
     group_by(bin_start, bin_end) %>%
     dplyr::group_by(bin_start, bin_end) %>%
     dplyr::summarise(meth = sum(meth), unmeth = sum(unmeth), cpg_count = length(meth), group = group[1]) %>% 
-    dplyr::mutate(perc_meth = meth / (meth + unmeth), depth = total_read_count / cpg_count) %>%
+    dplyr::mutate(perc_meth = meth / (meth + unmeth), depth = (meth + unmeth) / cpg_count) %>%
     dplyr::arrange(bin_start) %>%
     return
 }
@@ -209,8 +212,36 @@ get_intersect_single_bases <- function(...){
   intersecting_cpgs <- Reduce(function(x, y) merge(x, y, by = c("chr", "start", "end")), meth_tables_list) %>% select(chr, start, end)
   return(intersecting_cpgs)
 }
+#' Quickly get the overlaps between two bed-like tables via data splitting and parallel processing
+#'
+#' @family workhorse functions
+#' @param table_1 A data.table.
+#' @param table_2 A data.table.
+#' @return data.table
+fast_genomic_overlap <- function(table_1, table_2, cores = 1){
+  doMC::registerDoMC(cores = cores)
+  table_1_chrs <- table_1$chr %>% 
+    as.factor %>% 
+    levels
+  table_2_chrs <- table_2$chr %>% 
+    as.factor %>% 
+    levels
+
+  intersect_chrs <- table_1_chrs[table_1_chrs %in% table_2_chrs]
+
+  capture <- plyr::adply(intersect_chrs, 1, function(x){
+    table_1_sub <- table_1 %>% dplyr::filter(chr == x)
+    table_2_sub <- table_2 %>% dplyr::filter(chr == x)
+    data.table::setkey(table_1_sub, chr, start, end)
+    return(data.table::foverlaps(table_2_sub, table_1_sub, type="any", nomatch=0L))
+  }, .parallel = TRUE, .id = NULL)
+  
+  doMC::registerDoMC(cores = 1)
+  return(data.table(capture))
+}
 
 # Higher level functions --------------------------
+
 #' Get percent methylation table around gene model TSSs.
 #'
 #' @family high level functions
@@ -224,6 +255,24 @@ get_tss_perc_meth <- function(refgene_path, meth_table, range, bin_width){
   if(range < bin_width) stop("Stopped: Range is less than bin_width!")
   bin_ranges_refgene <- get_bin_ranges_refgene(refgene_path, range = range, bin_width = bin_width)
   get_binned_perc_meth(bin_ranges_refgene, meth_table) %>% return
+}
+#' Mask CpGs in repeats
+#'
+#' @family high level functions
+#' @param repeat_mask_ucsc_path A character.
+#' @param meth_table A data.table.
+#' @return data.table
+#' @export
+repeat_mask_meth_table <- function(repeat_mask_ucsc_path, meth_table, cores = 1){
+  repeat_mask <- fread(repeat_mask_ucsc_path)
+  repeat_mask <- repeat_mask %>% dplyr::select(genoName, genoStart, genoEnd)
+  names(repeat_mask) <- c("chr", "start", "end")
+  overlaps <- fast_genomic_overlap(meth_table, repeat_mask, cores = cores)
+
+  anti_joined <- dplyr::anti_join(meth_table, overlaps, by = c("chr", "start", "end"))
+  anti_joined %>% dim
+
+  return(dplyr::anti_join(meth_table, overlaps, by = c("chr", "start", "end")))
 }
 
 # Plotting functions ------------------------------

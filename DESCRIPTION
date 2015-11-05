@@ -7,13 +7,14 @@ Maintainer: Who to complain to <yourfault@somewhere.net>
 Description: More about what it does (maybe more than one line)
 License: What license is it under?
 LazyData: TRUE
-Imports: 
-  data.table (>= 1.9.6),
-  ggplot2    (>= 1.0.1),
-  dplyr      (>= 0.4.3),
-  parallel   (>= 3.2.2),
-  readr      (>= 0.1.1),
-  stringr    (>= 1.0.0),
-  R.utils    (>= 2.1.0),
-  reshape2   (>= 1.4.1), 
-  plyr       (>= 1.8.3)
+Imports:
+    data.table (>= 1.9.6),
+    ggplot2    (>= 1.0.1),
+    dplyr      (>= 0.4.3),
+    parallel   (>= 3.2.2),
+    readr      (>= 0.1.1),
+    stringr    (>= 1.0.0),
+    R.utils    (>= 2.1.0),
+    reshape2   (>= 1.4.1),
+    plyr       (>= 1.8.3)
+RoxygenNote: 5.0.0
