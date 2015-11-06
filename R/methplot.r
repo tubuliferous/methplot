@@ -177,10 +177,8 @@ get_genome_range_overlaps <- function(bin_ranges, bed_path){
   bin_ranges <- data.table(bin_ranges)
   setkey(bin_ranges, chr, start, end)
   bed <- data.table::fread(bed_path)
-  # # bed <- bed %>% rename(chr = V1, start = V2, end = V3)
   names(bed)[1:3] <- c("chr", "start", "end")
   capture_overlaps <- data.table::foverlaps(bed, bin_ranges, nomatch=0L)
-  # capture_overlaps <- data.table::foverlaps(bed, bin_ranges, nomatch=0L)
   return(capture_overlaps)
 }
 #' Get percent methylation table by bin.
@@ -213,7 +211,7 @@ get_binned_perc_meth <- function(ranges, meth_table){
 get_binned_perc_meth_list <- function(bin_ranges, meth_table_list, cores = 1){
   dt_names <- names(meth_table_list)
   binned_perc_meth_list <- mclapply(dt_names, function(dt_name){
-    this_binned_perc_meth <- get_binned_perc_meth(ranges_table, meth_table_list[[dt_name]])
+    this_binned_perc_meth <- get_binned_perc_meth(bin_ranges, meth_table_list[[dt_name]])
     this_binned_perc_meth$group <- dt_name
     gc()
     return(this_binned_perc_meth)
@@ -351,10 +349,10 @@ repeat_mask_meth_table <- function(repeat_mask_ucsc_path, meth_table){
 #' @export
 plot_generic_aggregate_enrichment <- function(ranges, bed_path){
   overlaps <- get_genome_range_overlaps(ranges, bed_path)
-  overlaps$overlap_start <- pmax(overlaps$start, overlaps$i.start)
-  overlaps$overlap_end <- pmin(overlaps$end, overlaps$i.end)
+  overlaps$overlap_start  <- pmax(overlaps$start, overlaps$i.start)
+  overlaps$overlap_end    <- pmin(overlaps$end, overlaps$i.end)
   overlaps$overlap_length <- overlaps$overlap_end - overlaps$overlap_start
-  overlaps_collapsed <- overlaps %>%
+  overlaps_collapsed      <- overlaps %>%
     dplyr::group_by(bin_start, bin_end) %>%
     dplyr::summarise(bin_mid = ceiling(mean(bin_end + bin_start)/2), sum_overlap_length = sum(overlap_length)) %>%
     dplyr::arrange(bin_start)
