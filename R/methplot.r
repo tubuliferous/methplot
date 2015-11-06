@@ -216,10 +216,10 @@ get_binned_perc_meth_list <- function(bin_ranges, meth_table_list, cores = 1){
     this_binned_perc_meth <- get_binned_perc_meth(ranges_table, meth_table_list[[dt_name]])
     this_binned_perc_meth$group <- dt_name
     gc()
+    return(this_binned_perc_meth)
   }, mc.cores = cores)
   names(binned_perc_meth_list) <- dt_names
-    return(binned_perc_meth_list)
-
+  return(binned_perc_meth_list)
 }
 #' Take BED-formatted single base coords from arbitrary number of supplied tables and return base intersection 
 #'
