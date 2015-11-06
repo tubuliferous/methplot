@@ -2,7 +2,7 @@
 % Please edit documentation in R/methplot.r
 \name{get_intersect_single_bases}
 \alias{get_intersect_single_bases}
-\title{Take BED-formatted single base coords from arbitrary number of tables and return base intersection coords}
+\title{Take BED-formatted single base coords from arbitrary number of supplied tables and return base intersection}
 \usage{
 get_intersect_single_bases(...)
 }
@@ -13,12 +13,13 @@ get_intersect_single_bases(...)
 A list of data.tables.
 }
 \description{
-Take BED-formatted single base coords from arbitrary number of tables and return base intersection coords
+Take BED-formatted single base coords from arbitrary number of supplied tables and return base intersection
 }
 \seealso{
 Other workorse functions: \code{\link{genomic_complement}},
   \code{\link{get_bin_ranges_bed}},
   \code{\link{get_bin_ranges_refgene}},
+  \code{\link{get_binned_perc_meth_list}},
   \code{\link{get_binned_perc_meth}},
   \code{\link{get_genome_range_overlaps}},
   \code{\link{parallel_genomic_complement}}

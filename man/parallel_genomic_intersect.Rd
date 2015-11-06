@@ -10,6 +10,8 @@ parallel_genomic_intersect(table_1, table_2, cores = 1)
 \item{table_1}{A data.table.}
 
 \item{table_2}{A data.table.}
+
+\item{cores}{An integer numeric.}
 }
 \value{
 data.table

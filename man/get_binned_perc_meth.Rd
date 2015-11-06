@@ -10,8 +10,6 @@ get_binned_perc_meth(ranges, meth_table)
 \item{meth_table}{A data.table.}
 
 \item{bin_ranges}{A data.frame.}
-
-\item{cores}{An integer.}
 }
 \value{
 data.table
@@ -23,6 +21,7 @@ Get percent methylation table by bin.
 Other workorse functions: \code{\link{genomic_complement}},
   \code{\link{get_bin_ranges_bed}},
   \code{\link{get_bin_ranges_refgene}},
+  \code{\link{get_binned_perc_meth_list}},
   \code{\link{get_genome_range_overlaps}},
   \code{\link{get_intersect_single_bases}},
   \code{\link{parallel_genomic_complement}}

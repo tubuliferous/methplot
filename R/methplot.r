@@ -172,7 +172,6 @@ get_bin_ranges_refgene <- function(refgene_path, range, bin_width){
 #' @family workorse functions
 #' @param bin_ranges A data.frame.
 #' @param bed_path A character.
-#' @param cores An integer. 
 #' @return data.table
 get_genome_range_overlaps <- function(bin_ranges, bed_path){
   bin_ranges <- data.table(bin_ranges)
@@ -189,7 +188,6 @@ get_genome_range_overlaps <- function(bin_ranges, bed_path){
 #' @family workorse functions
 #' @param bin_ranges A data.frame.
 #' @param meth_table A data.table.
-#' @param cores An integer.
 #' @return data.table
 #' @export
 get_binned_perc_meth <- function(ranges, meth_table){
@@ -204,7 +202,26 @@ get_binned_perc_meth <- function(ranges, meth_table){
     dplyr::arrange(bin_start) %>%
     return
 }
-#' Take BED-formatted single base coords from arbitrary number of tables and return base intersection coords
+#' Get percent methylation table by bin for list of meth tables.
+#'
+#' @family workorse functions
+#' @param bin_ranges A data.frame.
+#' @param meth_table_list A list of data.tables.
+#' @param cores An integer numeric.
+#' @return list
+#' @export
+get_binned_perc_meth_list <- function(bin_ranges, meth_table_list, cores = 1){
+  dt_names <- names(meth_table_list)
+  binned_perc_meth_list <- mclapply(dt_names, function(dt_name){
+    this_binned_perc_meth <- get_binned_perc_meth(ranges_table, meth_table_list[[dt_name]])
+    this_binned_perc_meth$group <- dt_name
+    gc()
+  }, mc.cores = cores)
+  names(binned_perc_meth_list) <- dt_names
+    return(binned_perc_meth_list)
+
+}
+#' Take BED-formatted single base coords from arbitrary number of supplied tables and return base intersection 
 #'
 #' @family workorse functions
 #' @param ... A list of meth tables (data.tables).
@@ -212,14 +229,21 @@ get_binned_perc_meth <- function(ranges, meth_table){
 #' @export
 get_intersect_single_bases <- function(...){
   meth_tables_list <- as.list(...)
-  intersecting_cpgs <- Reduce(function(x, y) merge(x, y, by = c("chr", "start", "end")), meth_tables_list) %>% select(chr, start, end)
-  return(intersecting_cpgs)
+  names <- deparse((substitute(...)))
+  table_names <- names %>% str_replace("list\\(", "") %>% str_replace("\\)", "") %>% strsplit(", ") %>% unlist
+  intersect_cols <- Reduce(function(x, y) merge(x, y, by = c("chr", "start", "end")), meth_tables_list) %>% select(chr, start, end)
+  intersect_tables_list <- lapply(meth_tables_list, function(x){
+    merge(intersect_cols, x)
+  })
+  names(intersect_tables_list) <- table_names
+  return(intersect_tables_list)
 }
 #' Quickly get the overlaps between two bed-like tables via data splitting and parallel processing
 #'
 #' @family workhorse functions
 #' @param table_1 A data.table.
 #' @param table_2 A data.table.
+#' @param cores An integer numeric. 
 #' @return data.table
 parallel_genomic_intersect <- function(table_1, table_2, cores = 1){
   doMC::registerDoMC(cores = cores)

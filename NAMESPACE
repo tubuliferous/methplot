@@ -3,6 +3,7 @@
 export(get_bin_ranges_bed)
 export(get_bin_ranges_refgene)
 export(get_binned_perc_meth)
+export(get_binned_perc_meth_list)
 export(get_intersect_single_bases)
 export(get_meth_table)
 export(get_tss_perc_meth)

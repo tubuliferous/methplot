@@ -10,8 +10,6 @@ get_genome_range_overlaps(bin_ranges, bed_path)
 \item{bin_ranges}{A data.frame.}
 
 \item{bed_path}{A character.}
-
-\item{cores}{An integer.}
 }
 \value{
 data.table
@@ -23,6 +21,7 @@ Get range overlaps
 Other workorse functions: \code{\link{genomic_complement}},
   \code{\link{get_bin_ranges_bed}},
   \code{\link{get_bin_ranges_refgene}},
+  \code{\link{get_binned_perc_meth_list}},
   \code{\link{get_binned_perc_meth}},
   \code{\link{get_intersect_single_bases}},
   \code{\link{parallel_genomic_complement}}

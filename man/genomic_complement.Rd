@@ -20,6 +20,7 @@ Get the rows from table_1 with coords that don't intersect the coords in table_2
 \seealso{
 Other workorse functions: \code{\link{get_bin_ranges_bed}},
   \code{\link{get_bin_ranges_refgene}},
+  \code{\link{get_binned_perc_meth_list}},
   \code{\link{get_binned_perc_meth}},
   \code{\link{get_genome_range_overlaps}},
   \code{\link{get_intersect_single_bases}},
