@@ -4,7 +4,8 @@
 \alias{get_binned_perc_meth_list}
 \title{Get percent methylation table by bin for list of meth tables.}
 \usage{
-get_binned_perc_meth_list(bin_ranges, meth_table_list, cores = 1)
+get_binned_perc_meth_list(bin_ranges, meth_table_list, abs = FALSE,
+  cores = 1)
 }
 \arguments{
 \item{bin_ranges}{A data.frame.}
@@ -20,7 +21,9 @@ list
 Get percent methylation table by bin for list of meth tables.
 }
 \seealso{
-Other workorse functions: \code{\link{genomic_complement}},
+Other workorse functions: \code{\link{add_chip_enrich_to_binned_perc_meth}},
+  \code{\link{genomic_complement}},
+  \code{\link{get_aggregate_bed_enrichment_over_ranges}},
   \code{\link{get_bin_ranges_bed}},
   \code{\link{get_bin_ranges_refgene}},
   \code{\link{get_binned_perc_meth}},

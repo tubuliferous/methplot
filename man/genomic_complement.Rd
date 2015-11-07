@@ -18,7 +18,9 @@ A data.table.
 Get the rows from table_1 with coords that don't intersect the coords in table_2
 }
 \seealso{
-Other workorse functions: \code{\link{get_bin_ranges_bed}},
+Other workorse functions: \code{\link{add_chip_enrich_to_binned_perc_meth}},
+  \code{\link{get_aggregate_bed_enrichment_over_ranges}},
+  \code{\link{get_bin_ranges_bed}},
   \code{\link{get_bin_ranges_refgene}},
   \code{\link{get_binned_perc_meth_list}},
   \code{\link{get_binned_perc_meth}},

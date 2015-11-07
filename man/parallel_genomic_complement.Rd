@@ -14,13 +14,15 @@ parallel_genomic_complement(table_1, table_2, cores = 1)
 \item{cores}{An integer numeric.}
 }
 \value{
-A data.table.
+data.table
 }
 \description{
 Get the rows from table_1 with coords that don't intersect the coords in table_2 parallelized by chrom
 }
 \seealso{
-Other workorse functions: \code{\link{genomic_complement}},
+Other workorse functions: \code{\link{add_chip_enrich_to_binned_perc_meth}},
+  \code{\link{genomic_complement}},
+  \code{\link{get_aggregate_bed_enrichment_over_ranges}},
   \code{\link{get_bin_ranges_bed}},
   \code{\link{get_bin_ranges_refgene}},
   \code{\link{get_binned_perc_meth_list}},

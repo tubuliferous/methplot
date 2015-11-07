@@ -16,7 +16,9 @@ A list of data.tables.
 Take BED-formatted single base coords from arbitrary number of supplied tables and return base intersection
 }
 \seealso{
-Other workorse functions: \code{\link{genomic_complement}},
+Other workorse functions: \code{\link{add_chip_enrich_to_binned_perc_meth}},
+  \code{\link{genomic_complement}},
+  \code{\link{get_aggregate_bed_enrichment_over_ranges}},
   \code{\link{get_bin_ranges_bed}},
   \code{\link{get_bin_ranges_refgene}},
   \code{\link{get_binned_perc_meth_list}},

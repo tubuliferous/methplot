@@ -188,7 +188,16 @@ get_genome_range_overlaps <- function(bin_ranges, bed_path){
 #' @param meth_table A data.table.
 #' @return data.table
 #' @export
-get_binned_perc_meth <- function(ranges, meth_table){
+get_binned_perc_meth <- function(ranges, meth_table, abs = FALSE){
+  # Use absolute distance from the element centers (not strand-specific)
+  if(abs == TRUE){
+    abs_neg_bin_start <- abs(ranges[which((abs(ranges$bin_start) > abs(ranges$bin_end))), ]$bin_start)
+    abs_neg_bin_end   <- abs(ranges[which((abs(ranges$bin_start) > abs(ranges$bin_end))), ]$bin_end)
+    negative_indices <- which((abs(ranges$bin_start) > abs(ranges$bin_end)))
+    ranges[negative_indices, ]$bin_start <- abs_neg_bin_end
+    ranges[negative_indices, ]$bin_end   <- abs_neg_bin_start
+  }
+
   ranges <- data.table(ranges)
   data.table::setkey(ranges, chr, start, end)
   capture_overlaps <- data.table::foverlaps(meth_table, ranges, type="any", nomatch=0L)
@@ -208,10 +217,10 @@ get_binned_perc_meth <- function(ranges, meth_table){
 #' @param cores An integer numeric.
 #' @return list
 #' @export
-get_binned_perc_meth_list <- function(bin_ranges, meth_table_list, cores = 1){
+get_binned_perc_meth_list <- function(bin_ranges, meth_table_list, abs = FALSE, cores = 1){
   dt_names <- names(meth_table_list)
   binned_perc_meth_list <- mclapply(dt_names, function(dt_name){
-    this_binned_perc_meth <- get_binned_perc_meth(bin_ranges, meth_table_list[[dt_name]])
+    this_binned_perc_meth <- get_binned_perc_meth(bin_ranges, meth_table_list[[dt_name]], abs = abs)
     this_binned_perc_meth$group <- dt_name
     gc()
     return(this_binned_perc_meth)
@@ -282,7 +291,7 @@ genomic_complement <- function(table_1, table_2){
 #' @param table_1 A data.table in BED format.
 #' @param table_2 A data.table in BED format.
 #' @param cores An integer numeric.
-#' @return A data.table.
+#' @return data.table
 parallel_genomic_complement <- function(table_1, table_2, cores = 1){
   doMC::registerDoMC(cores = cores)
   table_1_chrs <- table_1$chr %>% 
@@ -306,6 +315,45 @@ parallel_genomic_complement <- function(table_1, table_2, cores = 1){
 
   doMC::registerDoMC(cores = 1)
   return(data.table(capture))
+}
+#' Get overlap enrichment in ranges for generic BED-formatted file (e.g. peak ranges)
+#'
+#' @family workorse functions
+#' @param ranges A data.frame or data table.
+#' @param bed_path A character.
+#' @return data.table
+#' @export
+get_aggregate_bed_enrichment_over_ranges <- function(ranges, bed_path){
+  overlap <- get_genome_range_overlaps(ranges, bed_path)
+  overlap$overlap_start  <- pmax(overlap$start, overlap$i.start)
+  overlap$overlap_end    <- pmin(overlap$end, overlap$i.end)
+  overlap$overlap_length <- overlap$overlap_end - overlap$overlap_start
+  overlap_collapsed      <- overlap %>%
+    dplyr::group_by(bin_start, bin_end) %>%
+    dplyr::summarise(aggregate_bases_overlap = sum(overlap_length)) %>%
+    dplyr::arrange(bin_start)
+
+  overlap_collapsed$group <- "chip_enrichment"
+  overlap_collapsed$meth <- NA
+  overlap_collapsed$unmeth <- NA
+  overlap_collapsed$cpg_count <- NA
+  overlap_collapsed$depth <- NA
+  overlap_collapsed$perc_meth <- NA
+  overlap_collapsed <- overlap_collapsed %>% dplyr::transmute(bin_start, bin_end, meth, unmeth, cpg_count, group, perc_meth, depth, aggregate_bases_overlap)
+
+  return(overlap_collapsed)
+}
+#' Concatenate binned_perc_meth table with aggreegate enrichment table (e.g. from ChIP peaks), addiding dummy columns as required.
+#'
+#' @family workorse functions
+#' @param binned_perc_meth_table A data.table.
+#' @param chip_enrich_table A data.table.
+#' @return data.table
+#' @export
+add_chip_enrich_to_binned_perc_meth <- function(binned_perc_meth_table, chip_enrich_table){
+  binned_perc_meth_table$aggregate_bases_overlap <- NA
+  bound <- rbind(binned_perc_meth_table, chip_enrich_table)
+  return(bound)
 }
 
 # Higher level functions --------------------------
@@ -348,17 +396,10 @@ repeat_mask_meth_table <- function(repeat_mask_ucsc_path, meth_table){
 #' @return ggplot
 #' @export
 plot_generic_aggregate_enrichment <- function(ranges, bed_path){
-  overlaps <- get_genome_range_overlaps(ranges, bed_path)
-  overlaps$overlap_start  <- pmax(overlaps$start, overlaps$i.start)
-  overlaps$overlap_end    <- pmin(overlaps$end, overlaps$i.end)
-  overlaps$overlap_length <- overlaps$overlap_end - overlaps$overlap_start
-  overlaps_collapsed      <- overlaps %>%
-    dplyr::group_by(bin_start, bin_end) %>%
-    dplyr::summarise(bin_mid = ceiling(mean(bin_end + bin_start)/2), sum_overlap_length = sum(overlap_length)) %>%
-    dplyr::arrange(bin_start)
-
-  print(head(overlaps_collapsed))
-  this_plot <- ggplot2::ggplot(overlaps_collapsed, aes(bin_mid, sum_overlap_length)) + ggplot2::geom_area()
+  enrichment_table <- get_aggregate_bed_enrichment_over_ranges(ranges, bed_path)
+  enrichment_table <- enrichment_table %>% dplyr::mutate(bin_mid = ceiling((bin_end + bin_start)/2))
+  enrichment_table %>% head %>% print
+  this_plot <- ggplot2::ggplot(enrichment_table, aes(bin_mid, aggregate_bases_overlap)) + ggplot2::geom_area()
   return(this_plot)
 }
 #' Plot binned percent meth table.
@@ -400,9 +441,7 @@ plot_percent_meth <- function(binned_perc_meth_table){
 plot_percent_meth_with_depth <- function(binned_perc_meth_table){
   binned_perc_meth_table$bin_mid <- with(binned_perc_meth_table,
                                          (bin_start + bin_end)/2)
-
   merged_df <- melt(binned_perc_meth_table, id.vars = c("bin_start", "bin_end", "meth", "unmeth", "group", "bin_mid"))
-
   this_plot <- ggplot2::ggplot(merged_df) +
     ggplot2::geom_line(aes(x = bin_mid, y = value, color = group)) +
     ggplot2::geom_line(aes(x = bin_mid, y = value, color = group)) +
